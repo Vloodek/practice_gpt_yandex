@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Обработка OAuth-токена</title>
+</head>
+<body>
+    <script>
+        window.onload = function() {
+            function getTokenFromUrl() {
+                const hash = window.location.hash.substring(1);
+                const params = new URLSearchParams(hash);
+                return params.get("access_token");
+            }
+
+            const token = getTokenFromUrl();
+            if (token) {
+                fetch('/process_token?token=' + encodeURIComponent(token))
+                    .then(response => {
+                        console.log(`Response status: ${response.status}`);
+                        return response.text();
+                    })
+                    .then(data => {
+                        console.log('Token sent');
+                        console.log(data);
+                        window.opener.postMessage({ type: 'authSuccess', data }, window.location.origin);
+                        if (data.includes("Internal Server Error")) {
+                            console.error('Internal Server Error occurred');
+                        } else {
+                            window.location.href = "/";
+                        }
+                    })
+                    .catch(error => {
+                        console.log('Error sending token: ', error);
+                    });
+            } else {
+                console.log('Token not found in URL');
+                document.body.innerHTML = 'Token not received';
+            }
+        };
+    </script>
+</body>
+</html>

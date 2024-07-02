@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>История генераций</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .day-block {
+            margin-bottom: 30px;
+        }
+        .day-block h3 {
+            margin-bottom: 10px;
+            background-color: #007bff;
+            color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .history-item {
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+        }
+        .history-item:last-child {
+            border-bottom: none;
+        }
+        .announcement {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+        .announcement h4 {
+            margin: 0 0 10px;
+        }
+        .announcement p {
+            margin: 0;
+        }
+        /* Бургер-меню */
+        .burger-menu {
+            position: fixed;
+            left: 0;
+            top: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            width: 0;
+            height: 100%;
+            overflow-x: hidden;
+            transition: 0.3s;
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .burger-menu.open {
+            width: 250px;
+        }
+        .burger-menu ul {
+            list-style-type: none;
+            padding: 0;
+            text-align: left;
+        }
+        .burger-menu ul li {
+            padding: 15px;
+            font-size: 18px;
+            color: #fff;
+            transition: 0.2s;
+        }
+        .burger-menu ul li:hover {
+            background-color: #555;
+        }
+        .burger-menu a {
+            text-decoration: none;
+            color: #fff;
+        }
+        .burger-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            cursor: pointer;
+            z-index: 1100;
+        }
+        .burger-button .bar {
+            width: 35px;
+            height: 5px;
+            background-color: #6ba9ff;
+            margin: 6px 0;
+            transition: 0.4s;
+        }
+        .burger-button.open .bar:nth-child(1) {
+            transform: rotate(-45deg) translate(-9px, 6px);
+        }
+        .burger-button.open .bar:nth-child(2) {
+            opacity: 0;
+        }
+        .burger-button.open .bar:nth-child(3) {
+            transform: rotate(45deg) translate(-8px, -8px);
+        }
+    </style>
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/res/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/res/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/res/icons/favicon-16x16.png">
+    <link id="favicon" rel="icon" type="image/x-icon" href="/static/res/icons/favicon-32x32.png">
+</head>
+<body>
+    <!-- Бургер-меню -->
+    <div class="burger-button">
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+    </div>
+    <div class="burger-menu">
+        <ul>
+            <li><a href="/">Главная</a></li>
+            <li><a href="/history">История генераций</a></li>
+            <li><a href="/analyze-data">Анализ данных</a></li>
+            <li><a href="/form-page">Генерация</a></li>
+        </ul>
+    </div>
+    <div class="container">
+        <h2>История генераций</h2>
+        <div id="history">
+            {% for date, records in grouped_history.items() %}
+                <div class="day-block">
+                    <h3>{{ date }}</h3>
+                    {% for record in records %}
+                        <div class="history-item">
+                            <div class="announcement">
+                                <h4>{{ record.title }}</h4>
+                                <p>{{ record.text }}</p>
+                                <p><small>Создано в: {{ record.created_at }}</small></p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Yandex.Metrika counter -->
+    <script type="text/javascript">
+        (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+        m[i].l=1*new Date();
+        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
+        (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
+
+        ym(97688697, "init", {
+            clickmap:true,
+            trackLinks:true,
+            accurateTrackBounce:true,
+            webvisor:true
+        });
+        document.addEventListener('DOMContentLoaded', function() {
+            const burgerButton = document.querySelector('.burger-button');
+            const burgerMenu = document.querySelector('.burger-menu');
+
+            burgerButton.addEventListener('click', function() {
+                burgerButton.classList.toggle('open');
+                burgerMenu.classList.toggle('open');
+                document.body.classList.toggle('menu-opened');
+            });
+        });
+    </script>
+    <noscript><div><img src="https://mc.yandex.ru/watch/97688697" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+    <!-- /Yandex.Metrika counter -->
+</body>
+</html>

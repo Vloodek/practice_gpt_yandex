@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Страница формы</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        .form-section {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .form-section h2 {
+            margin-bottom: 10px;
+        }
+        .info-section {
+            background-color: #e7f3fe;
+            border-left: 6px solid #2196F3;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .info-section h3 {
+            margin-top: 0;
+        }
+        input[type="text"] {
+            width: 60%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            min-height: 50px;
+        }
+        #download-button {
+            display: none;
+            margin-top: 20px;
+            text-align: center;
+        }
+        /* Бургер-меню */
+        .burger-menu {
+            position: fixed;
+            left: 0;
+            top: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            width: 0;
+            height: 100%;
+            overflow-x: hidden;
+            transition: 0.3s;
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .burger-menu.open {
+            width: 250px;
+        }
+        .burger-menu ul {
+            list-style-type: none;
+            padding: 0;
+            text-align: left;
+        }
+        .burger-menu ul li {
+            padding: 15px;
+            font-size: 18px;
+            color: #fff;
+            transition: 0.2s;
+        }
+        .burger-menu ul li:hover {
+            background-color: #555;
+        }
+        .burger-menu a {
+            text-decoration: none;
+            color: #fff;
+        }
+        .burger-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            cursor: pointer;
+            z-index: 1100;
+        }
+        .burger-button .bar {
+            width: 35px;
+            height: 5px;
+            background-color: #6ba9ff;
+            margin: 6px 0;
+            transition: 0.4s;
+        }
+        .burger-button.open .bar:nth-child(1) {
+            transform: rotate(-45deg) translate(-9px, 6px);
+        }
+        .burger-button.open .bar:nth-child(2) {
+            opacity: 0;
+        }
+        .burger-button.open .bar:nth-child(3) {
+            transform: rotate(45deg) translate(-8px, -8px);
+        }
+        /* Стили для блока загрузки */
+        #loading-indicator {
+            display: inline-block;
+            margin-left: 10px;
+            visibility: hidden;
+        }
+        #loading-indicator .loader {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            position: relative;
+            top: 4px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+    <script>
+        let checkQueueInterval;
+        let isInQueue = false;
+
+        function runScript() {
+            if (isInQueue) {
+                document.getElementById("result").innerText = "Вы уже в очереди, подождите завершения обработки.";
+                return;
+            }
+
+            const inputUrl = document.getElementById("inputUrl").value;
+            const userTimestamp = new Date().toISOString();
+
+            document.getElementById("result").innerText = "";
+            document.getElementById("loading-indicator").style.visibility = "visible";
+
+            document.getElementById("inputUrl").disabled = true;
+            document.querySelector('button').disabled = true;
+
+            fetch(`/run-parser?url=${encodeURIComponent(inputUrl)}&timestamp=${encodeURIComponent(userTimestamp)}`, {
+                method: 'GET'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    document.getElementById("result").innerText = data.message;
+                    checkQueue(inputUrl);
+                } else if (data.error) {
+                    document.getElementById("result").innerText = `Ошибка: ${data.error}`;
+                    isInQueue = false;
+                }
+            })
+            .catch(error => {
+                document.getElementById("result").innerText = `Ошибка: ${error.message}`;
+                isInQueue = false;
+            });
+        }
+
+        function checkQueue(url) {
+            checkQueueInterval = setInterval(() => {
+                fetch(`/check-queue?url=${encodeURIComponent(url)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.message) {
+                            if (data.position > 0) {
+                                document.getElementById("result").innerText = `${data.message}. Ваша позиция: ${data.position}`;
+                            } else {
+                                document.getElementById("result").innerText = data.message;
+                            }
+                            if (data.message.startsWith("Обработка завершена")) {
+                                clearInterval(checkQueueInterval);
+                                isInQueue = false;
+                                fetch(`/get-result`)
+                                    .then(response => response.json())
+                                    .then(resultData => {
+                                        if (resultData && resultData.result_data) {
+                                            const title = resultData.result_data["Заголовок"] || "Заголовок не найден";
+                                            const text = resultData.result_data["Текст"] || "Текст не найден";
+                                            document.getElementById("result").innerHTML = 
+                                                `<h3>${title}</h3><p>${text}</p>`;
+                                        } else {
+                                            document.getElementById("result").innerText = "Результаты не найдены";
+                                        }
+                                        document.getElementById("loading-indicator").style.visibility = "hidden";
+                                        document.getElementById("inputUrl").disabled = false;
+                                        document.querySelector('button').disabled = false;
+                                    })
+                                    .catch(error => {
+                                        document.getElementById("result").innerText = `Ошибка при получении результата: ${error}`;
+                                        document.getElementById("loading-indicator").style.visibility = "hidden";
+                                        document.getElementById("inputUrl").disabled = false;
+                                        document.querySelector('button').disabled = false;
+                                    });
+                                document.getElementById("download-button").style.display = 'block';
+                            } else if (data.message.includes("Ошибка")) {
+                                clearInterval(checkQueueInterval);
+                                isInQueue = false;
+                                document.getElementById("loading-indicator").style.visibility = "hidden";
+                                document.getElementById("inputUrl").disabled = false;
+                                document.querySelector('button').disabled = false;
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error checking queue:", error);
+                        clearInterval(checkQueueInterval);
+                        document.getElementById("result").innerText = `Ошибка при проверке очереди: ${error.message}`;
+                        isInQueue = false;
+                        document.getElementById("loading-indicator").style.visibility = "hidden";
+                        document.getElementById("inputUrl").disabled = false;
+                        document.querySelector('button').disabled = false;
+                    });
+            }, 5000);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const burgerButton = document.querySelector('.burger-button');
+            const burgerMenu = document.querySelector('.burger-menu');
+
+            burgerButton.addEventListener('click', function() {
+                burgerButton.classList.toggle('open');
+                burgerMenu.classList.toggle('open');
+                document.body.classList.toggle('menu-opened');
+            });
+        });
+    </script>
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/res/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/res/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/res/icons/favicon-16x16.png">
+    <link id="favicon" rel="icon" type="image/x-icon" href="/static/res/icons/favicon-32x32.png">
+</head>
+<body>
+    <!-- Бургер-меню -->
+    <div class="burger-button">
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+    </div>
+    <div class="burger-menu">
+        <ul>
+            <li><a href="/">Главная</a></li>
+            <li><a href="/history">История генераций</a></li>
+            <li><a href="/analyze-data">Анализ данных</a></li>
+            <li><a href="/form-page">Генерация</a></li>
+        </ul>
+    </div>
+
+    <div class="container">
+        <section class="info-section">
+            <p>На данной странице вы можете сгенерировать рекламное объявление для вашей веб-страницы. После генерации вы получите текст объявления и заголовок, а также файл, в котором будет отчет из Яндекс Вордстата по ключевым словам вашего объявления по данным за прошлый месяц.</p>
+            <p><strong>Инструкция по получению URL:</strong></p>
+            <ol>
+              <li>Откройте ваш веб-браузер.</li>
+              <li>Перейдите на страницу, для которой хотите сгенерировать рекламное объявление.</li>
+              <li>В адресной строке браузера выделите полный URL (например, https://example.com).</li>
+              <li>Скопируйте выделенный URL (нажмите правую кнопку мыши и выберите "Копировать" или используйте сочетание клавиш Ctrl+C).</li>
+              <li>Вставьте скопированный URL в соответствующее поле на данной странице (нажмите правую кнопку мыши и выберите "Вставить" или используйте сочетание клавиш Ctrl+V).</li>
+            </ol>        </section>
+        <section class="form-section">
+            <h2>Введите URL:</h2>
+            <input type="text" id="inputUrl" placeholder="Введите URL">
+            <button onclick="runScript()">Готово</button>
+            <div id="loading-indicator">
+                <div class="loader"></div>
+            </div>
+        </section>
+        <div id="result"></div>
+        <div id="download-button">
+            <a href="/download-sorted-results" download="sorted_results.txt">
+                <button>Скачать отчет Вордстата</button>
+            </a>
+        </div>
+    </div>
+
+    <!-- Yandex.Metrika counter -->
+    <script type="text/javascript">
+        (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+        m[i].l=1*new Date();
+        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
+        (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
+
+        ym(97688697, "init", {
+            clickmap:true,
+            trackLinks:true,
+            accurateTrackBounce:true,
+            webvisor:true
+        });
+    </script>
+    <noscript><div><img src="https://mc.yandex.ru/watch/97688697" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+    <!-- /Yandex.Metrika counter -->
+</body>
+</html>
