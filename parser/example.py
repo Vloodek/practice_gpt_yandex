@@ -14,9 +14,9 @@ def example_main(phrases):
     # Адрес полного доступа: url ='https://api.direct.yandex.ru/v4/json/'
     url ='https://api-sandbox.direct.yandex.ru/v4/json/' 
     # Указываем свой токен на доступ к API Яндекс.Директ
-    token = 'y0_AgAAAAAzcWKcAAHlKAAAAAEIt7XrAAA8dlWAto1PRaB7WVbEgXPHMXVDMQ'
+    token = 'TOKEN'
     # Указываем логин своей учетной записи от Яндекс.Директ
-    userName = 'fine-vladek'
+    userName = 'LOGIN'
 
     # Пишем список общих минус-слов, как в примере (со знаком "-")
     # minusWords = [
